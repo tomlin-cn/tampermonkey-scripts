@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TikTok 小店 批量删除销量/Views N/A 商品
 // @namespace    https://github.com/你的GitHub用户名/tampermonkey-scripts
-// @version      1.0.0
+// @version      1.0.1
 // @updateURL    https://raw.githubusercontent.com/你的GitHub用户名/tampermonkey-scripts/main/tiktok_delete.user.js
 // @downloadURL  https://raw.githubusercontent.com/你的GitHub用户名/tampermonkey-scripts/main/tiktok_delete.user.js
 // @match        *://*/*
