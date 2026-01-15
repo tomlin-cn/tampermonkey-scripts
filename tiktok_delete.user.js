@@ -95,16 +95,25 @@
 
             for(let i=0;i<rows.length;i++){
                 const row = rows[i];
-                let sold = (row.innerText.match(/销量:\s*([\dN/A]+)/i)||[])[1] || 'N/A';
-                let views = (row.innerText.match(/Views:\s*([\dN/A]+)/i)||[])[1] || 'N/A';
-                const lineText = `行 ${i+1} | 销量: ${sold} | Views: ${views}`;
-                if(sold==='N/A' && views==='N/A'){
-                    const checkbox = row.querySelector('label.core-checkbox input[type="checkbox"]');
-                    if(checkbox && !checkbox.checked){ checkbox.click(); deleteCount++; log(lineText + ' ✅勾选'); }
-                } else {
-                    log(lineText);
-                }
+                const text = row.innerText;
+            
+                // 英文识别
+                const sold_en = text.match(/销量:\s*(\d+|N\/A)/i);
+                const views_en = text.match(/Views:\s*(\d+|N\/A)/i);
+            
+                // 印尼语识别
+                const sold_id = text.match(/(\d+)\s*produk\s*terjual/i);
+                const views_id = text.match(/Tayangan:\s*(\d+)/i);
+            
+                // 判断是否删除
+                let soldValue = sold_en ? sold_en[1] : (sold_id ? sold_id[1] : null);
+                let viewsValue = views_en ? views_en[1] : (views_id ? views_id[1] : null);
+            
+                const shouldSelect = (soldValue==='N/A' || soldValue==='0') && (viewsValue==='N/A' || viewsValue==='0');
+            
+                log(`行 ${i+1} | sold: ${soldValue} | views: ${viewsValue} | 删除:${shouldSelect}`);
             }
+
 
             totalDeleted += deleteCount;
             log(`本页勾选 ${deleteCount} 个商品，总删除计数 ${totalDeleted}`);
