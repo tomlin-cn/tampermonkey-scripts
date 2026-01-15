@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         TikTok 小店 批量删除销量/Views N/A 商品
 // @namespace    https://github.com/tomlin-cn/tampermonkey-scripts
-// @version      1.0.2
+// @version      1.0.3
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
 // @description  批量删除销量+Views为N/A商品，分页循环，可配置翻页次数和删除总数上限，日志滚动，Confirm稳定点击
