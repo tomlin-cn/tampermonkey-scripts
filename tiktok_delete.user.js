@@ -89,12 +89,17 @@
                 let sold = (row.innerText.match(/销量:\s*([\dN/A]+)/i)||[])[1] || 'N/A';
                 let views = (row.innerText.match(/Views:\s*([\dN/A]+)/i)||[])[1] || 'N/A';
                 const lineText = `行 ${i+1} | 销量: ${sold} | Views: ${views}`;
-                if(sold==='N/A' && views==='N/A'){
+                const shouldSelect = (sold==='N/A' || sold==='0') && (views==='N/A' || views==='0');
+
+                if(shouldSelect){
                     const checkbox = row.querySelector('label.core-checkbox input[type="checkbox"]');
-                    if(checkbox && !checkbox.checked){ checkbox.click(); deleteCount++; log(lineText + ' ✅勾选'); }
-                } else {
-                    log(lineText);
+                    if(checkbox && !checkbox.checked){
+                        checkbox.click();
+                        deleteCount++;
+                        log(lineText + ' ✅勾选');
+                    }
                 }
+
             }
 
             totalDeleted += deleteCount;
