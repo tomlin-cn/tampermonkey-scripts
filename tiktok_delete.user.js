@@ -108,8 +108,16 @@
                 // 判断是否删除
                 let soldValue = sold_en ? sold_en[1] : (sold_id ? sold_id[1] : null);
                 let viewsValue = views_en ? views_en[1] : (views_id ? views_id[1] : null);
-            
-                const shouldSelect = (soldValue==='null' || soldValue==='0') && (viewsValue==='null' || viewsValue==='0');
+                const isEmpty = v =>
+                  v === null ||
+                  v === undefined ||
+                  v === '' ||
+                  v === 'N/A' ||
+                  v === 'null' ||
+                  Number(v) === 0;
+                
+                const shouldSelect = isEmpty(soldValue) && isEmpty(viewsValue);
+
             
                 log(`行 ${i+1} | sold: ${soldValue} | views: ${viewsValue} | 删除:${shouldSelect}`);
             }
