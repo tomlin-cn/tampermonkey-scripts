@@ -1,11 +1,9 @@
 // ==UserScript==
-// @name         TikTok 小店 批量删除销量/Views N/A 商品
-// @namespace    https://github.com/tomlin-cn/tampermonkey-scripts
-// @version      1.0.3
-// @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
-// @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
+// @name         TikTok 小店 批量删除销量/Views N/A 商品（可配置分页+删除上限）
+// @namespace    http://tampermonkey.net/
+// @version      1.9
 // @description  批量删除销量+Views为N/A商品，分页循环，可配置翻页次数和删除总数上限，日志滚动，Confirm稳定点击
-// @author       tomlin-cn
+// @author       ChatGPT
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
@@ -49,38 +47,31 @@
         logDiv.scrollTop = logDiv.scrollHeight;
     }
     // 点击排序按钮 + 选择第二个排序选项
-    async function clickSortButton() {
-        let btn = null;
-        for(let i=0;i<20;i++){
-            btn = document.querySelector("#product-table-container > div.py-16.flex.justify-between.items-start > div:nth-child(2) > button");
-            if(btn) break;
-            await new Promise(r=>setTimeout(r,500));
+    async function sortBeforeDelete() {
+        // 1️⃣ 点击外层按钮
+        const sortBtnWrapper = document.querySelector("#product-table-container > div.py-16.flex.justify-between.items-start > div:nth-child(2) > button");
+        if (!sortBtnWrapper) {
+            log('⚠️ 没找到排序按钮外层');
+            return;
         }
-        if(!btn){ console.log('⚠️ 没找到排序按钮'); return; }
+        sortBtnWrapper.click();
+        log('✅ 点击排序按钮外层');
+        await new Promise(r => setTimeout(r, 500)); // 等下拉渲染
 
-        // 手动触发事件
-        ['mousedown','mouseup','click'].forEach(ev => {
-            btn.dispatchEvent(new MouseEvent(ev,{bubbles:true}));
-        });
-
-        console.log('✅ 已点击排序按钮，等待下拉渲染...');
-        await new Promise(r=>setTimeout(r,500));
-
-        const option = document.querySelector("#product-table-container span > div > div > div:nth-child(2)");
-        if(option){
-            ['mousedown','mouseup','click'].forEach(ev => option.dispatchEvent(new MouseEvent(ev,{bubbles:true})));
-            console.log('✅ 已选择第二个排序项，等待排序生效...');
-            await new Promise(r=>setTimeout(r,2000));
+        // 2️⃣ 点击第二个排序选项
+        const sortOption = document.querySelector("#product-table-container span > div > div > div:nth-child(2)");
+        if (sortOption) {
+            sortOption.click();
+            log('✅ 已选择第二个排序项');
+            await new Promise(r => setTimeout(r, 2000)); // 等排序生效
         } else {
-            console.log('⚠️ 没找到排序选项');
+            log('⚠️ 没找到排序选项');
         }
     }
 
 
-
-
     btn.addEventListener('click', async () => {
-        await clickSortButton(); // ✅ 排序执行
+        await sortBeforeDelete(); // ✅ 排序执行
         let totalDeleted = 0;
         for(let page=1; page<=MAX_PAGES; page++){
             log(`🔹 开始第 ${page} 页处理`);
@@ -95,33 +86,16 @@
 
             for(let i=0;i<rows.length;i++){
                 const row = rows[i];
-                const text = row.innerText;
-            
-                // 英文识别
-                const sold_en = text.match(/销量:\s*(\d+|N\/A)/i);
-                const views_en = text.match(/Views:\s*(\d+|N\/A)/i);
-            
-                // 印尼语识别
-                const sold_id = text.match(/(\d+)\s*produk\s*terjual/i);
-                const views_id = text.match(/Tayangan:\s*(\d+)/i);
-            
-                // 判断是否删除
-                let soldValue = sold_en ? sold_en[1] : (sold_id ? sold_id[1] : null);
-                let viewsValue = views_en ? views_en[1] : (views_id ? views_id[1] : null);
-                const isEmpty = v =>
-                  v === null ||
-                  v === undefined ||
-                  v === '' ||
-                  v === 'N/A' ||
-                  v === 'null' ||
-                  Number(v) === 0;
-                
-                const shouldSelect = isEmpty(soldValue) && isEmpty(viewsValue);
-
-            
-                log(`行 ${i+1} | sold: ${soldValue} | views: ${viewsValue} | 删除:${shouldSelect}`);
+                let sold = (row.innerText.match(/销量:\s*([\dN/A]+)/i)||[])[1] || 'N/A';
+                let views = (row.innerText.match(/Views:\s*([\dN/A]+)/i)||[])[1] || 'N/A';
+                const lineText = `行 ${i+1} | 销量: ${sold} | Views: ${views}`;
+                if(sold==='N/A' && views==='N/A'){
+                    const checkbox = row.querySelector('label.core-checkbox input[type="checkbox"]');
+                    if(checkbox && !checkbox.checked){ checkbox.click(); deleteCount++; log(lineText + ' ✅勾选'); }
+                } else {
+                    log(lineText);
+                }
             }
-
 
             totalDeleted += deleteCount;
             log(`本页勾选 ${deleteCount} 个商品，总删除计数 ${totalDeleted}`);
