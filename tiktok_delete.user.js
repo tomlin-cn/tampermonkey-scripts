@@ -13,7 +13,7 @@
 
     // ====== 可配置变量 ======
     const MAX_PAGES = 10;      // 默认最多翻页次数
-    const MAX_DELETE = 100;     // 默认总删除数量上限
+    const MAX_DELETE = 80;     // 默认总删除数量上限
     // ========================
 
     const TODAY_KEY = 'ttshop_deleted_today';
