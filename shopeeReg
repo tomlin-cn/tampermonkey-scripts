@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Shopee印尼注册自动接码助手(定向修复版)
 // @namespace    http://tampermonkey.net/
-// @version      3.4
+// @version      3.5
 // @description  定向修复：修正邮箱提取正则，邮件OTP延迟限次，强化OTP页面监控
 // @author       You
 // @match        https://shopee.co.id/buyer/signup*
