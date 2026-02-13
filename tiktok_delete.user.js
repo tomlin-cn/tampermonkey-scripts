@@ -1,6 +1,8 @@
 // ==UserScript==
 // @name         TikTok 小店 批量删除销量/Views N/A 商品（精准删除版）
 // @namespace    http://tampermonkey.net/
+// @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
+// @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
 // @version      2.0.0
 // @description  严格区分删除与下架，精准点击红色 Konfirmasi 确认按钮
 // @author       ChatGPT
