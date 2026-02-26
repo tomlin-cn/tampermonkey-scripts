@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_delete.user.js
-// @version      2.0.2
+// @version      2.1.2
 // @description  严格区分删除与下架，精准点击红色 Konfirmasi 确认按钮
 // @author       ChatGPT
 // @match        https://seller-id.tokopedia.com/product/manage*
