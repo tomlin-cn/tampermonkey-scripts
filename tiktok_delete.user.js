@@ -34,7 +34,7 @@
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
             <label>最大删除数:</label>
-            <input type="number" id="tk_max_del" value="80" style="width:50px;color:black;text-align:center;">
+            <input type="number" id="tk_max_del" value="280" style="width:50px;color:black;text-align:center;">
         </div>
 
         <div style="display:flex;justify-content:space-between;margin-bottom:10px;">
