@@ -4,7 +4,7 @@
 // @version      2026.2.27
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/shopeeScraper.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/shopeeScraper.user.js
-// @description  Shopee 搜索页单页采集（延迟滚动+采集失败自动重试+支持RB销量）
+// @description  Shopee 搜索页单页采集（延迟滚动+采集失败自动重试+支持RB销量+随机采集间隔）
 // @author       ChatGPT
 // @match        https://shopee.co.id/*
 // @grant        none
@@ -13,9 +13,14 @@
 (function () {
     'use strict';
 
+    // ================= 配置区域 =================
+    const MIN_CLICK_WAIT = 10000; // ⚡️ 采集一个商品后的 最小 等待时间 (毫秒)，默认 30000 (30秒)
+    const MAX_CLICK_WAIT = 60000; // ⚡️ 采集一个商品后的 最大 等待时间 (毫秒)，默认 60000 (60秒)
+    // ===========================================
+
     const LOCAL_STORAGE_KEY = 'shopee_bigseller_collected_urls';
     const MIN_SALES = 100;
-    const CLICK_DELAY = 800;
+    // const CLICK_DELAY = 800; // 原固定延迟，已废弃
     const INITIAL_DELAY = 10000;  // 🕒 打开网址后延迟30秒再滚动检测
     const LOGIN_DELAY = 30000;
     const SCROLL_STEP = 2000;
@@ -159,7 +164,11 @@
             }
             collectedUrls.add(url);
             saveCollectedUrls(collectedUrls);
-            await sleep(CLICK_DELAY);
+            
+            // 🔥 这里修改为随机延迟
+            const randomDelay = Math.floor(Math.random() * (MAX_CLICK_WAIT - MIN_CLICK_WAIT + 1)) + MIN_CLICK_WAIT;
+            console.log(`⏳ 采集成功，随机等待 ${(randomDelay / 1000).toFixed(1)} 秒继续...`);
+            await sleep(randomDelay);
         }
 
         console.log("✅ 单页采集完成");
