@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Shopee BigSeller Scraper - 智能延迟与重试版
 // @namespace    http://tampermonkey.net/
-// @version      2026.2.18
+// @version      2026.2.27
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/shopeeScraper.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/shopeeScraper.user.js
 // @description  Shopee 搜索页单页采集（延迟滚动+采集失败自动重试+支持RB销量）
@@ -14,7 +14,7 @@
     'use strict';
 
     const LOCAL_STORAGE_KEY = 'shopee_bigseller_collected_urls';
-    const MIN_SALES = 10;
+    const MIN_SALES = 100;
     const CLICK_DELAY = 800;
     const INITIAL_DELAY = 10000;  // 🕒 打开网址后延迟30秒再滚动检测
     const LOGIN_DELAY = 30000;
