@@ -38,7 +38,7 @@
         </div>
         <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
             <label>Views低于:</label>
-            <input type="number" id="tk_view_threshold" value="50" style="width:50px;color:black;text-align:center;">
+            <input type="number" id="tk_view_threshold" value="3" style="width:50px;color:black;text-align:center;">
         </div>
         <div style="margin-bottom:10px;color:#aaa;font-size:10px;">
             * 自动跳过上架不足7天的商品
