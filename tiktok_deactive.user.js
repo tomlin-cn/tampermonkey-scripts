@@ -20,7 +20,7 @@
         console.log('[助手] 进入编辑页面，开启循环检测按钮...');
 
         let tryCount = 0;
-        const maxTries = 5; // 最多尝试5次检测
+        const maxTries = 30; // 最多尝试5次检测
 
         const attemptUpdate = () => {
             // 查找主页面的 Update/发布按钮
@@ -60,7 +60,7 @@
         };
 
         // 初始延迟从 2-5秒 改为 5-8秒，确保页面加载更充分
-        setTimeout(attemptUpdate, Math.floor(Math.random() * 3001) + 5000); 
+        setTimeout(attemptUpdate, Math.floor(Math.random() * 5001) + 5000); 
         return; 
     }
 
@@ -241,33 +241,35 @@
     });
 
     // 自动上架 (批量编辑) 执行流程
+    // ====== 7. 自动上架 (批量编辑) 执行流程 ======
     document.getElementById('tk_auto_edit_btn').addEventListener('click', async () => {
         
-        // --- 修正后的：点击 Deactivated/Nonaktif 逻辑 ---
+        // --- 1. 点击 Deactivated/Nonaktif 标签逻辑 ---
         log('⏳ 正在切换到标签页...', 'yellow');
-        
         const deactTab = Array.from(document.querySelectorAll('div')).find(d => {
-            // 获取文字并转为小写，去掉首尾空格
             const txt = d.innerText.trim().toLowerCase();
-            // 必须包含 flex 且 文字完全等于 deactivated 或 nonaktif
-            return d.className.includes('flex') && (txt === 'deactivated' || txt === 'nonaktif' || txt === '已下架');
+            // 兼容英/印尼/中，且必须包含 flex 类名
+            return d.className.includes('flex') && (txt === 'deactivated' || txt === 'nonaktif' || txt === 'dinonaktifkan' || txt === '已下架');
         });
 
         if (deactTab) {
             deactTab.click();
             log(`✅ 已点击 ${deactTab.innerText}，等待 10 秒加载页面...`, 'cyan');
-            await new Promise(r => setTimeout(r, 10000)); // 强制延迟10秒
+            await new Promise(r => setTimeout(r, 10000)); 
         } else {
-            log('⚠️ 未找到 Deactivated/Nonaktif 标签，直接开始...', 'orange');
+            log('⚠️ 未找到标签，直接开始...', 'orange');
         }
-        // -------------------------------
+
+        // --- 2. 自动点击编辑逻辑 ---
         const targetCount = Math.floor(Math.random() * 21) + 20; 
         let currentDone = 0;
         log(`▶️ 自动上架启动 | 计划点击次数: ${targetCount}`, '#E91E63');
+        
         while (currentDone < targetCount) {
             const editButtons = Array.from(document.querySelectorAll('button')).filter(btn =>
                 btn.querySelector('.arco-icon-edit')
             );
+
             if (editButtons.length === 0) {
                 log('当前页没有找到编辑按钮，尝试翻页...', 'yellow');
                 const nextBtn = document.querySelector(".core-pagination-item-next:not(.core-pagination-item-disabled)");
@@ -277,15 +279,30 @@
                     continue;
                 } else break;
             }
+
             for (let btn of editButtons) {
                 if (currentDone >= targetCount) break;
+
                 btn.scrollIntoView({ behavior: "smooth", block: "center" });
                 await new Promise(r => setTimeout(r, 500));
+                
+                // 执行点击
                 btn.click();
                 currentDone++;
                 log(`[${currentDone}/${targetCount}] 已点击编辑`, '#66ff66');
-                const sleepTime = Math.floor(Math.random() * 10001) + 5000;
-                log(`等待下一次点击: ${sleepTime / 1000}s...`, '#aaa');
+
+                // --- 核心修改：判断延迟时间 ---
+                let sleepTime;
+                if (currentDone === 1) {
+                    // 如果刚点完第1个，第二次点击前等待 60 秒
+                    sleepTime = 60000; 
+                    log(`⏱️ 首次点击完成，特殊等待 60 秒 (准备第二次)...`, '#ff9800');
+                } else {
+                    // 之后的点击恢复 5-15 秒随机延迟
+                    sleepTime = Math.floor(Math.random() * 10001) + 5000;
+                    log(`等待下一次点击: ${sleepTime / 1000}s...`, '#aaa');
+                }
+
                 await new Promise(r => setTimeout(r, sleepTime));
             }
         }
