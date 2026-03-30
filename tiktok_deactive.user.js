@@ -245,7 +245,7 @@
         // --- 新增：点击 Deactivated 逻辑 ---
         log('⏳ 正在切换到 Deactivated 标签...', 'yellow');
         const deactTab = Array.from(document.querySelectorAll('div')).find(d => 
-            d.innerText.trim() === 'Deactivated' && d.className.includes('flex')
+            ['Deactivated', 'Nonaktif', 'Dinonaktifkan'].includes(d.innerText.trim()) && d.className.includes('flex')
         );
         if (deactTab) {
             deactTab.click();
