@@ -242,20 +242,23 @@
 
     // 自动上架 (批量编辑) 执行流程
     document.getElementById('tk_auto_edit_btn').addEventListener('click', async () => {
-        // --- 修正后的：点击 Deactivated 逻辑 (兼容带数字的情况) ---
-        log('⏳ 正在切换到 Deactivated 标签...', 'yellow');
+        
+        // --- 修正后的：点击 Deactivated/Nonaktif 逻辑 ---
+        log('⏳ 正在切换到标签页...', 'yellow');
+        
         const deactTab = Array.from(document.querySelectorAll('div')).find(d => {
-            const txt = d.innerText.trim();
-            // 使用正则模糊匹配，只要包含这些词且 class 里有 flex 即可
-            return /Deactivated|Nonaktif|Dinonaktifkan|已下架/i.test(txt) && d.className.includes('flex');
+            // 获取文字并转为小写，去掉首尾空格
+            const txt = d.innerText.trim().toLowerCase();
+            // 必须包含 flex 且 文字完全等于 deactivated 或 nonaktif
+            return d.className.includes('flex') && (txt === 'deactivated' || txt === 'nonaktif' || txt === '已下架');
         });
 
         if (deactTab) {
             deactTab.click();
-            log('✅ 已点击 Deactivated，等待 10 秒加载页面...', 'cyan');
-            await new Promise(r => setTimeout(r, 10000)); 
+            log(`✅ 已点击 ${deactTab.innerText}，等待 10 秒加载页面...`, 'cyan');
+            await new Promise(r => setTimeout(r, 10000)); // 强制延迟10秒
         } else {
-            log('⚠️ 未找到 Deactivated 标签，可能已在当前页，直接开始...', 'orange');
+            log('⚠️ 未找到 Deactivated/Nonaktif 标签，直接开始...', 'orange');
         }
         // -------------------------------
         const targetCount = Math.floor(Math.random() * 21) + 20; 
