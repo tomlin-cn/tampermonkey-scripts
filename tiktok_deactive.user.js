@@ -242,6 +242,19 @@
 
     // 自动上架 (批量编辑) 执行流程
     document.getElementById('tk_auto_edit_btn').addEventListener('click', async () => {
+        // --- 新增：点击 Deactivated 逻辑 ---
+        log('⏳ 正在切换到 Deactivated 标签...', 'yellow');
+        const deactTab = Array.from(document.querySelectorAll('div')).find(d => 
+            d.innerText.trim() === 'Deactivated' && d.className.includes('flex')
+        );
+        if (deactTab) {
+            deactTab.click();
+            log('✅ 已点击 Deactivated，等待 10 秒加载页面...', 'cyan');
+            await new Promise(r => setTimeout(r, 10000)); // 强制延迟10秒
+        } else {
+            log('⚠️ 未找到 Deactivated 标签，可能已在当前页，直接开始...', 'orange');
+        }
+        // -------------------------------
         const targetCount = Math.floor(Math.random() * 21) + 20; 
         let currentDone = 0;
         log(`▶️ 自动上架启动 | 计划点击次数: ${targetCount}`, '#E91E63');
