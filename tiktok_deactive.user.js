@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
-// @version      4.6.2
+// @version      4.6.3
 // @description  逻辑：(Live + Reviewing) > 99 时下架。新增：自动上架及二次弹窗 Submit 处理。
 // @author       TOM
 // @match        https://seller-id.tokopedia.com/product/manage*
@@ -15,11 +15,15 @@
     'use strict';
 
     // ====== 0. 自动更新/发布页面逻辑 (仅针对编辑页修改) ======
+    // ====== 0. 自动更新/发布页面逻辑 (增强了检测机制) ======
     if (window.location.href.includes('/product/edit/')) {
-        console.log('[助手] 进入编辑页面，准备自动发布...');
-        
-        setTimeout(async () => {
-            // 1. 查找并点击主页面的 Update/发布按钮
+        console.log('[助手] 进入编辑页面，开启循环检测按钮...');
+
+        let tryCount = 0;
+        const maxTries = 5; // 最多尝试5次检测
+
+        const attemptUpdate = () => {
+            // 查找主页面的 Update/发布按钮
             const updateBtn = Array.from(document.querySelectorAll('button')).find(b =>
                 b.innerText.includes('Update') ||
                 b.innerText.includes('Publish') ||
@@ -30,7 +34,7 @@
                 updateBtn.click();
                 console.log('✅ 已点击主页面 Update');
 
-                // 2. 额外逻辑：等待 2 秒检测是否有二次确认弹窗 (Submit)
+                // 检测二次弹窗 (Submit)
                 setTimeout(() => {
                     const submitBtn = Array.from(document.querySelectorAll('button')).find(b => 
                         (b.innerText.includes('Submit') || b.innerText.includes('Kirim')) && 
@@ -38,19 +42,25 @@
                     );
                     if (submitBtn) {
                         submitBtn.click();
-                        console.log('✅ 检测到二次弹窗，已点击 Submit');
+                        console.log('✅ 已点击二次弹窗 Submit');
                     }
-                }, 4000);
+                }, 2000);
 
-                // 3. 5秒后关闭当前窗口
-                setTimeout(() => {
-                    console.log('关闭当前窗口');
-                    window.close();
-                }, 8000); 
+                // 延迟关闭
+                setTimeout(() => { window.close(); }, 6000);
             } else {
-                console.log('❌ 未能找到 Update 按钮');
+                tryCount++;
+                if (tryCount < maxTries) {
+                    console.log(`[重试] 第 ${tryCount} 次未找到按钮，2秒后重试...`);
+                    setTimeout(attemptUpdate, 2000);
+                } else {
+                    console.log('❌ 超过最大重试次数，未能找到 Update 按钮，请检查页面是否加载正常');
+                }
             }
-        }, Math.floor(Math.random() * 3000) + 2000); // 2-5秒随机延迟
+        };
+
+        // 初始延迟从 2-5秒 改为 5-8秒，确保页面加载更充分
+        setTimeout(attemptUpdate, Math.floor(Math.random() * 3001) + 5000); 
         return; 
     }
 
