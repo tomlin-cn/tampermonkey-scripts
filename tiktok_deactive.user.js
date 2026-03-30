@@ -242,15 +242,18 @@
 
     // 自动上架 (批量编辑) 执行流程
     document.getElementById('tk_auto_edit_btn').addEventListener('click', async () => {
-        // --- 新增：点击 Deactivated 逻辑 ---
+        // --- 修正后的：点击 Deactivated 逻辑 (兼容带数字的情况) ---
         log('⏳ 正在切换到 Deactivated 标签...', 'yellow');
-        const deactTab = Array.from(document.querySelectorAll('div')).find(d => 
-            ['Deactivated', 'Nonaktif', 'Dinonaktifkan'].includes(d.innerText.trim()) && d.className.includes('flex')
-        );
+        const deactTab = Array.from(document.querySelectorAll('div')).find(d => {
+            const txt = d.innerText.trim();
+            // 使用正则模糊匹配，只要包含这些词且 class 里有 flex 即可
+            return /Deactivated|Nonaktif|Dinonaktifkan|已下架/i.test(txt) && d.className.includes('flex');
+        });
+
         if (deactTab) {
             deactTab.click();
             log('✅ 已点击 Deactivated，等待 10 秒加载页面...', 'cyan');
-            await new Promise(r => setTimeout(r, 10000)); // 强制延迟10秒
+            await new Promise(r => setTimeout(r, 10000)); 
         } else {
             log('⚠️ 未找到 Deactivated 标签，可能已在当前页，直接开始...', 'orange');
         }
