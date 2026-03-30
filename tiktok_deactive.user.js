@@ -26,7 +26,7 @@
             // 查找主页面的 Update/发布按钮
             const updateBtn = Array.from(document.querySelectorAll('button')).find(b =>
                 b.innerText.includes('Update') ||
-                b.innerText.includes('Publish') ||
+                b.innerText.includes('Pembaruan') ||
                 b.querySelector('.arco-icon-publish')
             );
 
