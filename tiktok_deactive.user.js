@@ -14,19 +14,43 @@
 (function() {
     'use strict';
 
-    // ====== 0. 自动更新/发布页面逻辑 (仅针对编辑页修改) ======
-    // ====== 0. 自动更新/发布页面逻辑 (增强了检测机制) ======
+    // ====== 0. 自动更新/发布页面逻辑 (增强检测成功标志) ======
     if (window.location.href.includes('/product/edit/')) {
         console.log('[助手] 进入编辑页面，开启循环检测按钮...');
 
         let tryCount = 0;
-        const maxTries = 30; // 最多尝试5次检测
+        const maxTries = 30; // 寻找 Update 按钮的最大次数
+
+        // --- 新增：检测成功标志并关闭的函数 ---
+        const checkSuccessAndClose = () => {
+            let checkTimerCount = 0;
+            const maxChecks = 60; // 最多等 20 秒成功提示
+            
+            const timer = setInterval(() => {
+                const successSpan = Array.from(document.querySelectorAll('span._title_rehek_126')).find(s =>
+                    /Product submitted|Produk diajukan/i.test(s.innerText)
+                );
+
+                if (successSpan) {
+                    console.log('✅ 检测到提交成功标志: ' + successSpan.innerText);
+                    clearInterval(timer);
+                    setTimeout(() => { window.close(); }, 1000); // 看到提示后等1秒关闭，更稳
+                } else {
+                    checkTimerCount++;
+                    console.log(`[等待] 正在等待成功提示出现... (${checkTimerCount}/${maxChecks})`);
+                    if (checkTimerCount >= maxChecks) {
+                        clearInterval(timer);
+                        console.log('⚠️ 等待成功提示超时，强制关闭窗口');
+                        window.close();
+                    }
+                }
+            }, 1000); // 每秒检测一次
+        };
 
         const attemptUpdate = () => {
-            // 查找主页面的 Update/发布按钮
+            // 查找主页面的 Update/发布按钮 (兼容多语言)
             const updateBtn = Array.from(document.querySelectorAll('button')).find(b =>
-                b.innerText.includes('Update') ||
-                b.innerText.includes('Pembaruan') ||
+                /Update|Pembaruan|Perbarui|Publish|Terbitkan/i.test(b.innerText) ||
                 b.querySelector('.arco-icon-publish')
             );
 
@@ -34,32 +58,33 @@
                 updateBtn.click();
                 console.log('✅ 已点击主页面 Update');
 
-                // 检测二次弹窗 (Submit)
+                // 检测并处理二次确认弹窗 (Submit)
                 setTimeout(() => {
                     const submitBtn = Array.from(document.querySelectorAll('button')).find(b => 
-                        (b.innerText.includes('Submit') || b.innerText.includes('Kirim')) && 
+                        /Submit|Kirim|Konfirmasi/i.test(b.innerText) && 
                         b.classList.contains('core-btn-primary')
                     );
                     if (submitBtn) {
                         submitBtn.click();
                         console.log('✅ 已点击二次弹窗 Submit');
                     }
-                }, 2000);
+                }, 1500);
 
-                // 延迟关闭
-                setTimeout(() => { window.close(); }, 6000);
+                // --- 关键修改：不再死等 6 秒，而是开始监测成功字段 ---
+                checkSuccessAndClose();
+
             } else {
                 tryCount++;
                 if (tryCount < maxTries) {
                     console.log(`[重试] 第 ${tryCount} 次未找到按钮，2秒后重试...`);
                     setTimeout(attemptUpdate, 2000);
                 } else {
-                    console.log('❌ 超过最大重试次数，未能找到 Update 按钮，请检查页面是否加载正常');
+                    console.log('❌ 超过最大重试次数，未能找到按钮');
                 }
             }
         };
 
-        // 初始延迟从 2-5秒 改为 5-8秒，确保页面加载更充分
+        // 初始延迟 5-10 秒
         setTimeout(attemptUpdate, Math.floor(Math.random() * 5001) + 5000); 
         return; 
     }
