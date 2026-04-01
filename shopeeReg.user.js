@@ -95,9 +95,9 @@
                                         }
                                     }
                                 } catch (e) {}
-                                if (state.emailAttemptCount >= 2) {
+                                if (state.emailAttemptCount >= 4) {
                                     clearInterval(state.emailTimer);
-                                    log("❌ 邮件码已请求2次无果，请【人工介入】");
+                                    log("❌ 邮件码已请求4次无果，请【人工介入】");
                                 }
                             }
                         });
