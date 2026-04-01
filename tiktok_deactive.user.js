@@ -128,7 +128,7 @@
     });
 
     panel.innerHTML = `
-        <div style="margin-bottom:10px;font-weight:bold;color:#448AFF;font-size:14px;border-bottom:1px solid #444;padding-bottom:5px;">📦 批量下架助手 (L+R 总额版)</div>
+        <div style="margin-bottom:10px;font-weight:bold;color:#448AFF;font-size:14px;border-bottom:1px solid #444;padding-bottom:5px;">📦 上下架助手 (验证码阻塞版)</div>
         <div style="background:#222;padding:8px;border-radius:4px;margin-bottom:10px;font-size:12px;line-height:1.6;">
             <div id="tk_count_status" style="color:#aaa;">L: - | R: -</div>
             <div id="tk_total_status" style="color:#4caf50;font-weight:bold;">当前活跃总数: -</div>
@@ -362,9 +362,9 @@
 
                 // 时间判断逻辑
                 let sleepTime;
-                if (currentDone === 1) {
-                    sleepTime = 60000; // 第一次点击后等 60 秒再点第二个
-                    log(`⏱️ 首次点击完成，特殊等待 60 秒...`, '#ff9800');
+                if (currentDone < 3) {
+                    sleepTime = 30000; // 第一次点击后等 60 秒再点第二个
+                    log(`⏱️ 首次点击完成，特殊等待 30 秒...`, '#ff9800');
                 } else {
                     sleepTime = Math.floor(Math.random() * 10001) + 5000;
                     log(`等待下一次点击: ${sleepTime / 1000}s...`, '#aaa');
