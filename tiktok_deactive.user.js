@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         TikTok 小店 批量下架助手 (4.6.0 印尼语适配版)
+// @name         TikTok 小店 批量下架助手 (4.6.6 全量完整逻辑版)
 // @namespace    http://tampermonkey.net/
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
-// @version      4.6.3
-// @description  逻辑：(Live + Reviewing) > 99 时下架。新增：自动上架及二次弹窗 Submit 处理。
+// @version      4.6.6
+// @description  全量逻辑恢复：统计识别、批量下架逻辑完全还原。新增验证码阻塞监控与提交成功字段循环检测。
 // @author       TOM
 // @match        https://seller-id.tokopedia.com/product/manage*
 // @match        https://seller-id.tokopedia.com/product/edit/*
@@ -14,19 +14,37 @@
 (function() {
     'use strict';
 
-    // ====== 0. 自动更新/发布页面逻辑 (增强检测成功标志) ======
+    // 辅助：检查当前页面验证码弹窗是否显示
+    const isCaptchaShowing = () => {
+        const captcha = document.querySelector('.captcha_verify_container');
+        return captcha && captcha.style.visibility !== 'hidden';
+    };
+
+    // ====== 0. 自动更新/发布页面逻辑 (增强版) ======
     if (window.location.href.includes('/product/edit/')) {
-        console.log('[助手] 进入编辑页面，开启循环检测按钮...');
+        console.log('[助手] 进入编辑页面，开启监控...');
 
         let tryCount = 0;
-        const maxTries = 30; // 寻找 Update 按钮的最大次数
+        const maxTries = 30; 
 
-        // --- 新增：检测成功标志并关闭的函数 ---
+        // 核心：循环检测成功标志才关闭
         const checkSuccessAndClose = () => {
             let checkTimerCount = 0;
-            const maxChecks = 60; // 最多等 20 秒成功提示
+            const maxChecks = 120; // 最多等 120 秒
             
             const timer = setInterval(() => {
+                // --- 验证码阻塞检查 ---
+                if (isCaptchaShowing()) {
+                    localStorage.setItem('tk_captcha_active', 'true');
+                    console.warn('[暂停] 编辑页出现验证码，等待手动处理...');
+                    return; // 验证码在，就不往下跑
+                } else {
+                    // 验证码消失，释放锁
+                    if (localStorage.getItem('tk_captcha_active') === 'true') {
+                        localStorage.setItem('tk_captcha_active', 'false');
+                    }
+                }
+
                 const successSpan = Array.from(document.querySelectorAll('span._title_rehek_126')).find(s =>
                     /Product submitted|Produk diajukan/i.test(s.innerText)
                 );
@@ -34,23 +52,22 @@
                 if (successSpan) {
                     console.log('✅ 检测到提交成功标志: ' + successSpan.innerText);
                     clearInterval(timer);
-                    setTimeout(() => { window.close(); }, 1000); // 看到提示后等1秒关闭，更稳
+                    setTimeout(() => { window.close(); }, 1500);
                 } else {
                     checkTimerCount++;
                     console.log(`[等待] 正在等待成功提示出现... (${checkTimerCount}/${maxChecks})`);
                     if (checkTimerCount >= maxChecks) {
                         clearInterval(timer);
-                        console.log('⚠️ 等待成功提示超时，强制关闭窗口');
+                        console.log('⚠️ 等待超时，强制关闭窗口');
                         window.close();
                     }
                 }
-            }, 1000); // 每秒检测一次
+            }, 1000);
         };
 
         const attemptUpdate = () => {
-            // 查找主页面的 Update/发布按钮 (兼容多语言)
             const updateBtn = Array.from(document.querySelectorAll('button')).find(b =>
-                /Update|Pembaruan|Perbarui|Publish|Terbitkan/i.test(b.innerText) ||
+                /Update|Pembaruan|Perbarui|Publish|Terbitkan|更新|发布/i.test(b.innerText) ||
                 b.querySelector('.arco-icon-publish')
             );
 
@@ -58,10 +75,9 @@
                 updateBtn.click();
                 console.log('✅ 已点击主页面 Update');
 
-                // 检测并处理二次确认弹窗 (Submit)
                 setTimeout(() => {
                     const submitBtn = Array.from(document.querySelectorAll('button')).find(b => 
-                        /Submit|Kirim|Konfirmasi/i.test(b.innerText) && 
+                        /Submit|Kirim|Konfirmasi|确认|提交/i.test(b.innerText) && 
                         b.classList.contains('core-btn-primary')
                     );
                     if (submitBtn) {
@@ -70,26 +86,21 @@
                     }
                 }, 1500);
 
-                // --- 关键修改：不再死等 6 秒，而是开始监测成功字段 ---
                 checkSuccessAndClose();
-
             } else {
                 tryCount++;
                 if (tryCount < maxTries) {
                     console.log(`[重试] 第 ${tryCount} 次未找到按钮，2秒后重试...`);
                     setTimeout(attemptUpdate, 2000);
-                } else {
-                    console.log('❌ 超过最大重试次数，未能找到按钮');
                 }
             }
         };
 
-        // 初始延迟 5-10 秒
         setTimeout(attemptUpdate, Math.floor(Math.random() * 5001) + 5000); 
         return; 
     }
 
-    // ====== 1. UI 面板 (其余代码严禁改动，保持原样) ======
+    // ====== 1. UI 面板 (完全还原原始样式) ======
     const panel = document.createElement('div');
     Object.assign(panel.style, {
         position: 'fixed', left: '20px', bottom: '20px',
@@ -130,6 +141,7 @@
         logDiv.scrollTop = logDiv.scrollHeight;
     }
 
+    // ====== 2. 暴力点击函数 (还原) ======
     function forceClickConfirm(el) {
         if (!el) return;
         el.removeAttribute('disabled');
@@ -141,6 +153,7 @@
         el.dispatchEvent(new MouseEvent('click', opts));
     }
 
+    // ====== 3. 统计逻辑 (还原：包含所有印尼语和英语关键词判断) ======
     function getStats() {
         const spans = document.querySelectorAll('span.font-regular.text-neutral-text3');
         let live = 0, rev = 0;
@@ -156,6 +169,7 @@
         return { live, rev, total: (live + rev) };
     }
 
+    // ====== 4. 下架弹窗处理 (还原完整逻辑) ======
     async function handlePlatformModal() {
         log('检测到弹窗，正在勾选平台...', '#FFEB3B');
         const platforms = ["TikTok Shop", "Tokopedia"];
@@ -179,7 +193,7 @@
             log('✅ 确认下架指令已发送', '#4caf50');
             return true;
         } else {
-            const altBtn = Array.from(document.querySelectorAll('button')).find(b =>
+            const altBtn = Array.from(document.querySelectorAll('button')).find(b => 
                 b.innerText.includes('Confirm') || b.innerText.includes('确认') || b.innerText.includes('Konfirmasi')
             );
             if (altBtn) {
@@ -200,6 +214,7 @@
         return m ? parseFloat(m[0]) : 0;
     }
 
+    // ====== 5. 实时监控面板 (还原) ======
     setInterval(() => {
         const s = getStats();
         const q = s.total - 99;
@@ -211,7 +226,7 @@
         if (quotaEl) quotaEl.innerText = q > 0 ? `待处理名额: ${q}` : `无需下架 (保留99)`;
     }, 2000);
 
-    // 批量下架主执行流程
+    // ====== 6. 批量下架主逻辑 (还原) ======
     document.getElementById('tk_start_btn').addEventListener('click', async () => {
         const stats = getStats();
         const limit = parseInt(document.getElementById('tk_view_threshold').value) || 0;
@@ -242,12 +257,13 @@
                 }
             }
             if (pageSelected > 0) {
+                log('打开批量菜单...', 'yellow');
                 const bulkBtn = document.querySelector(".pulse-bulk-action-dropdown button");
                 if (bulkBtn) {
                     bulkBtn.click();
                     await new Promise(r => setTimeout(r, 1200));
                     const menu = Array.from(document.querySelectorAll('.core-dropdown-menu-item, .pulse-dropdown-menu-item'));
-                    const decBtn = menu.find(m => m.innerText.includes('Deactivate') || m.innerText.includes('下架') || m.innerText.includes('Nonaktifkan'));
+                    const decBtn = menu.find(m => /Deactivate|下架|Nonaktifkan/i.test(m.innerText));
                     if (decBtn) {
                         decBtn.click();
                         await new Promise(r => setTimeout(r, 2000));
@@ -259,21 +275,22 @@
             const next = document.querySelector(".core-pagination-item-next:not(.core-pagination-item-disabled)");
             if (next && done < maxDel) {
                 next.click();
+                log('📄 正在翻页...', 'cyan');
                 await new Promise(r => setTimeout(r, 6000));
             } else break;
         }
         log('🏁 批量下架任务执行完毕', '#4caf50');
     });
 
-    // 自动上架 (批量编辑) 执行流程
-    // ====== 7. 自动上架 (批量编辑) 执行流程 ======
+    // ====== 7. 自动上架执行流程 (加入验证码阻塞判断) ======
     document.getElementById('tk_auto_edit_btn').addEventListener('click', async () => {
-        
+        // 重置状态
+        localStorage.setItem('tk_captcha_active', 'false');
+
         // --- 1. 点击 Deactivated/Nonaktif 标签逻辑 ---
         log('⏳ 正在切换到标签页...', 'yellow');
         const deactTab = Array.from(document.querySelectorAll('div')).find(d => {
             const txt = d.innerText.trim().toLowerCase();
-            // 兼容英/印尼/中，且必须包含 flex 类名
             return d.className.includes('flex') && (txt === 'deactivated' || txt === 'nonaktif' || txt === 'dinonaktifkan' || txt === '已下架');
         });
 
@@ -282,15 +299,25 @@
             log(`✅ 已点击 ${deactTab.innerText}，等待 10 秒加载页面...`, 'cyan');
             await new Promise(r => setTimeout(r, 10000)); 
         } else {
-            log('⚠️ 未找到标签，直接开始...', 'orange');
+            log('⚠️ 未找到 Deactivated/Nonaktif 标签，直接开始...', 'orange');
         }
 
         // --- 2. 自动点击编辑逻辑 ---
-        const targetCount = Math.floor(Math.random() * 10) + 40; 
+        const targetCount = Math.floor(Math.random() * 11) + 40; 
         let currentDone = 0;
         log(`▶️ 自动上架启动 | 计划点击次数: ${targetCount}`, '#E91E63');
         
         while (currentDone < targetCount) {
+            // --- 全局验证码阻塞检查 ---
+            if (localStorage.getItem('tk_captcha_active') === 'true') {
+                log('🛑 检测到验证码阻塞，暂停开启新窗口...', 'red');
+                while (localStorage.getItem('tk_captcha_active') === 'true') {
+                    await new Promise(r => setTimeout(r, 3000));
+                }
+                log('🟢 验证码已解除，继续运行...', '#4caf50');
+                await new Promise(r => setTimeout(r, 2000)); 
+            }
+
             const editButtons = Array.from(document.querySelectorAll('button')).filter(btn =>
                 btn.querySelector('.arco-icon-edit')
             );
@@ -307,23 +334,21 @@
 
             for (let btn of editButtons) {
                 if (currentDone >= targetCount) break;
+                if (localStorage.getItem('tk_captcha_active') === 'true') break; // 循环中也要检查
 
                 btn.scrollIntoView({ behavior: "smooth", block: "center" });
                 await new Promise(r => setTimeout(r, 500));
                 
-                // 执行点击
                 btn.click();
                 currentDone++;
-                log(`[${currentDone}/${targetCount}] 已点击编辑`, '#66ff66');
+                log(`[${currentDone}/${targetCount}] 已开启编辑窗口`, '#66ff66');
 
-                // --- 核心修改：判断延迟时间 ---
+                // 时间判断逻辑
                 let sleepTime;
-                if (currentDone < 3) {
-                    // 如果刚点完第1个，第二次点击前等待 60 秒
-                    sleepTime = 30000; 
-                    log(`⏱️ 首次点击完成，特殊等待 60 秒 (准备第二次)...`, '#ff9800');
+                if (currentDone === 1) {
+                    sleepTime = 60000; // 第一次点击后等 60 秒再点第二个
+                    log(`⏱️ 首次点击完成，特殊等待 60 秒...`, '#ff9800');
                 } else {
-                    // 之后的点击恢复 5-15 秒随机延迟
                     sleepTime = Math.floor(Math.random() * 10001) + 5000;
                     log(`等待下一次点击: ${sleepTime / 1000}s...`, '#aaa');
                 }
@@ -331,7 +356,7 @@
                 await new Promise(r => setTimeout(r, sleepTime));
             }
         }
-        log('🏁 自动点击编辑任务完成', '#4caf50');
+        log('🏁 自动上架任务执行完毕', '#4caf50');
     });
 
 })();
