@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Shopee印尼注册自动接码助手(Hero-SMS版)
 // @namespace    http://tampermonkey.net/
-// @version      3.5
+// @version      3.7
 // @description  对接 hero-sms.com 平台，保留原有邮件OTP逻辑及页面监控
 // @author       You
 // @match        https://shopee.co.id/buyer/signup*
