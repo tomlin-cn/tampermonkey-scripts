@@ -24,8 +24,8 @@
     // ================= 配置区域 (已更新为 Hero-SMS) =================
     const CONFIG = {
         apiKey: "30251114dB174c607c89c21e69B2952d",
-        serviceId: "Shopee", // 服务名称
-        countryId: "2",      // 国家ID
+        serviceId: "ka", // 服务名称
+        countryId: "6",      // 国家ID
         baseUrl: "https://hero-sms.com/stubs/handler_api.php",
         emailOtpUrl: "https://bsh.bhdata.com:30015/e7g1Ysq/",
         maxResend: 4,
