@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         TikTok 小店 批量下架助手 (4.6.6 全量完整逻辑版)
+// @name         TikTok 小店 批量下架助手 (4.6.8 验证码阻塞)
 // @namespace    http://tampermonkey.net/
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
