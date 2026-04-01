@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @updateURL    https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
 // @downloadURL  https://raw.githubusercontent.com/tomlin-cn/tampermonkey-scripts/main/tiktok_deactive.user.js
-// @version      4.6.6
+// @version      4.6.8
 // @description  全量逻辑恢复：统计识别、批量下架逻辑完全还原。新增验证码阻塞监控与提交成功字段循环检测。
 // @author       TOM
 // @match        https://seller-id.tokopedia.com/product/manage*
@@ -20,86 +20,103 @@
         return captcha && captcha.style.visibility !== 'hidden';
     };
 
-    // ====== 0. 自动更新/发布页面逻辑 (增强版) ======
+  // ====== 0. 自动更新/发布页面逻辑 (全程验证码阻塞版) ======
     if (window.location.href.includes('/product/edit/')) {
-        console.log('[助手] 进入编辑页面，开启监控...');
+        console.log('%c[助手] 编辑页全程监控启动...', 'color:white; background:#448AFF; padding:2px 5px;');
 
-        let tryCount = 0;
-        const maxTries = 30; 
+        let hasClickedUpdate = false;
+        let hasClickedSubmit = false;
+        let monitorSeconds = 0;
 
-        // 核心：循环检测成功标志才关闭
-        const checkSuccessAndClose = () => {
-            let checkTimerCount = 0;
-            const maxChecks = 120; // 最多等 120 秒
-            
-            const timer = setInterval(() => {
-                // --- 验证码阻塞检查 ---
-                if (isCaptchaShowing()) {
-                    localStorage.setItem('tk_captcha_active', 'true');
-                    console.warn('[暂停] 编辑页出现验证码，等待手动处理...');
-                    return; // 验证码在，就不往下跑
-                } else {
-                    // 验证码消失，释放锁
-                    if (localStorage.getItem('tk_captcha_active') === 'true') {
-                        localStorage.setItem('tk_captcha_active', 'false');
-                    }
-                }
-
-                const successSpan = Array.from(document.querySelectorAll('span._title_rehek_126')).find(s =>
-                    /Product submitted|Produk diajukan/i.test(s.innerText)
-                );
-
-                if (successSpan) {
-                    console.log('✅ 检测到提交成功标志: ' + successSpan.innerText);
-                    clearInterval(timer);
-                    setTimeout(() => { window.close(); }, 1500);
-                } else {
-                    checkTimerCount++;
-                    console.log(`[等待] 正在等待成功提示出现... (${checkTimerCount}/${maxChecks})`);
-                    if (checkTimerCount >= maxChecks) {
-                        clearInterval(timer);
-                        console.log('⚠️ 等待超时，强制关闭窗口');
-                        window.close();
-                    }
-                }
-            }, 1000);
-        };
-
-        const attemptUpdate = () => {
-            const updateBtn = Array.from(document.querySelectorAll('button')).find(b =>
-                /Update|Pembaruan|Perbarui|Publish|Terbitkan|更新|发布/i.test(b.innerText) ||
-                b.querySelector('.arco-icon-publish')
-            );
-
-            if (updateBtn) {
-                updateBtn.click();
-                console.log('✅ 已点击主页面 Update');
-
-                setTimeout(() => {
-                    const submitBtn = Array.from(document.querySelectorAll('button')).find(b => 
-                        /Submit|Kirim|Konfirmasi|确认|提交/i.test(b.innerText) && 
-                        b.classList.contains('core-btn-primary')
-                    );
-                    if (submitBtn) {
-                        submitBtn.click();
-                        console.log('✅ 已点击二次弹窗 Submit');
-                    }
-                }, 1500);
-
-                checkSuccessAndClose();
-            } else {
-                tryCount++;
-                if (tryCount < maxTries) {
-                    console.log(`[重试] 第 ${tryCount} 次未找到按钮，2秒后重试...`);
-                    setTimeout(attemptUpdate, 2000);
+        // 1. 验证码检测函数 (最高优先级)
+        const checkCaptcha = () => {
+            const selectors = ['.captcha_verify_container', '.secsdk-captcha-mask', '#secsdk-captcha-drag-wrapper', '[class*="captcha"]'];
+            for (let s of selectors) {
+                const el = document.querySelector(s);
+                if (el && el.offsetHeight > 0 && window.getComputedStyle(el).visibility !== 'hidden') {
+                    return true;
                 }
             }
+            return false;
         };
 
-        setTimeout(attemptUpdate, Math.floor(Math.random() * 5001) + 5000); 
-        return; 
-    }
+        // 2. 成功标志检测
+        const findSuccess = () => {
+            const spans = document.querySelectorAll('span');
+            for (let s of spans) {
+                if (/Product submitted|Produk diajukan|提交成功|已提交/i.test(s.innerText.trim())) return s.innerText.trim();
+            }
+            return null;
+        };
 
+        // 3. 中央调度循环 (每秒执行一次)
+        const masterLoop = setInterval(() => {
+            // --- 第一步：验证码检测 (任何时候出现都立即阻塞) ---
+            if (checkCaptcha()) {
+                if (localStorage.getItem('tk_captcha_active') !== 'true') {
+                    localStorage.setItem('tk_captcha_active', 'true'); // 锁住全局，不让开新窗口
+                }
+                console.warn('🛑 [验证码拦截] 检测到验证码，暂停所有点击和监控...');
+                return; // 直接跳出本次循环，不执行后面任何逻辑
+            } else {
+                // 验证码消失，释放锁
+                if (localStorage.getItem('tk_captcha_active') === 'true') {
+                    localStorage.setItem('tk_captcha_active', 'false');
+                    console.log('🟢 [验证码解除] 继续执行发布流程...');
+                }
+            }
+
+            // --- 第二步：检测是否已经成功 (成功了就关掉) ---
+            const successMsg = findSuccess();
+            if (successMsg) {
+                console.log('%c✅ 发布成功: ' + successMsg, 'color:#4caf50; font-weight:bold;');
+                clearInterval(masterLoop);
+                setTimeout(() => { window.close(); }, 1500);
+                return;
+            }
+
+            // --- 第三步：执行点击逻辑 (仅在未点过且验证码不在时) ---
+
+            // A. 寻找并点击主 Update 按钮
+            if (!hasClickedUpdate) {
+                const updateBtn = Array.from(document.querySelectorAll('button')).find(b =>
+                    /Update|Pembaruan|Perbarui|Publish|Terbitkan|更新|发布/i.test(b.innerText) ||
+                    b.querySelector('.arco-icon-publish')
+                );
+                if (updateBtn) {
+                    updateBtn.click();
+                    hasClickedUpdate = true;
+                    console.log('🚀 已点击主 Update 按钮');
+                }
+            }
+
+            // B. 寻找并点击二次 Submit 按钮
+            if (hasClickedUpdate && !hasClickedSubmit) {
+                const submitBtn = Array.from(document.querySelectorAll('button')).find(b =>
+                    /Submit|Kirim|Konfirmasi|确认|提交/i.test(b.innerText) &&
+                    b.classList.contains('core-btn-primary')
+                );
+                if (submitBtn) {
+                    submitBtn.click();
+                    hasClickedSubmit = true;
+                    console.log('🚀 已点击弹窗 Submit 按钮');
+                }
+            }
+
+            // --- 第四步：超时处理 ---
+            monitorSeconds++;
+            if (monitorSeconds % 10 === 0) console.log(`[流程状态] 已运行 ${monitorSeconds}s, Update:${hasClickedUpdate}, Submit:${hasClickedSubmit}`);
+
+            if (monitorSeconds > 180) { // 3分钟强制放弃
+                clearInterval(masterLoop);
+                console.log('⚠️ 任务长时间未完成，强制关闭');
+                window.close();
+            }
+
+        }, 1000);
+
+        return;
+    }
     // ====== 1. UI 面板 (完全还原原始样式) ======
     const panel = document.createElement('div');
     Object.assign(panel.style, {
@@ -193,7 +210,7 @@
             log('✅ 确认下架指令已发送', '#4caf50');
             return true;
         } else {
-            const altBtn = Array.from(document.querySelectorAll('button')).find(b => 
+            const altBtn = Array.from(document.querySelectorAll('button')).find(b =>
                 b.innerText.includes('Confirm') || b.innerText.includes('确认') || b.innerText.includes('Konfirmasi')
             );
             if (altBtn) {
@@ -297,16 +314,16 @@
         if (deactTab) {
             deactTab.click();
             log(`✅ 已点击 ${deactTab.innerText}，等待 10 秒加载页面...`, 'cyan');
-            await new Promise(r => setTimeout(r, 10000)); 
+            await new Promise(r => setTimeout(r, 10000));
         } else {
             log('⚠️ 未找到 Deactivated/Nonaktif 标签，直接开始...', 'orange');
         }
 
         // --- 2. 自动点击编辑逻辑 ---
-        const targetCount = Math.floor(Math.random() * 11) + 40; 
+        const targetCount = Math.floor(Math.random() * 11) + 40;
         let currentDone = 0;
         log(`▶️ 自动上架启动 | 计划点击次数: ${targetCount}`, '#E91E63');
-        
+
         while (currentDone < targetCount) {
             // --- 全局验证码阻塞检查 ---
             if (localStorage.getItem('tk_captcha_active') === 'true') {
@@ -315,7 +332,7 @@
                     await new Promise(r => setTimeout(r, 3000));
                 }
                 log('🟢 验证码已解除，继续运行...', '#4caf50');
-                await new Promise(r => setTimeout(r, 2000)); 
+                await new Promise(r => setTimeout(r, 2000));
             }
 
             const editButtons = Array.from(document.querySelectorAll('button')).filter(btn =>
@@ -327,7 +344,7 @@
                 const nextBtn = document.querySelector(".core-pagination-item-next:not(.core-pagination-item-disabled)");
                 if (nextBtn) {
                     nextBtn.click();
-                    await new Promise(r => setTimeout(r, 5000)); 
+                    await new Promise(r => setTimeout(r, 5000));
                     continue;
                 } else break;
             }
@@ -338,16 +355,16 @@
 
                 btn.scrollIntoView({ behavior: "smooth", block: "center" });
                 await new Promise(r => setTimeout(r, 500));
-                
+
                 btn.click();
                 currentDone++;
                 log(`[${currentDone}/${targetCount}] 已开启编辑窗口`, '#66ff66');
 
                 // 时间判断逻辑
                 let sleepTime;
-                if (currentDone < 3) {
-                    sleepTime = 30000; // 第一次点击后等 60 秒再点第二个
-                    log(`⏱️ 首次点击完成，特殊等待 30 秒...`, '#ff9800');
+                if (currentDone === 1) {
+                    sleepTime = 60000; // 第一次点击后等 60 秒再点第二个
+                    log(`⏱️ 首次点击完成，特殊等待 60 秒...`, '#ff9800');
                 } else {
                     sleepTime = Math.floor(Math.random() * 10001) + 5000;
                     log(`等待下一次点击: ${sleepTime / 1000}s...`, '#aaa');
