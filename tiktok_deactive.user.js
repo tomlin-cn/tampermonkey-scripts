@@ -286,7 +286,7 @@
         }
 
         // --- 2. 自动点击编辑逻辑 ---
-        const targetCount = Math.floor(Math.random() * 21) + 20; 
+        const targetCount = Math.floor(Math.random() * 10) + 40; 
         let currentDone = 0;
         log(`▶️ 自动上架启动 | 计划点击次数: ${targetCount}`, '#E91E63');
         
@@ -318,9 +318,9 @@
 
                 // --- 核心修改：判断延迟时间 ---
                 let sleepTime;
-                if (currentDone === 1) {
+                if (currentDone < 3) {
                     // 如果刚点完第1个，第二次点击前等待 60 秒
-                    sleepTime = 60000; 
+                    sleepTime = 30000; 
                     log(`⏱️ 首次点击完成，特殊等待 60 秒 (准备第二次)...`, '#ff9800');
                 } else {
                     // 之后的点击恢复 5-15 秒随机延迟
