@@ -345,9 +345,9 @@
 
                 // 时间判断逻辑
                 let sleepTime;
-                if (currentDone === 1) {
-                    sleepTime = 60000; // 第一次点击后等 60 秒再点第二个
-                    log(`⏱️ 首次点击完成，特殊等待 60 秒...`, '#ff9800');
+                if (currentDone < 3) {
+                    sleepTime = 30000; // 第一次点击后等 60 秒再点第二个
+                    log(`⏱️ 首次点击完成，特殊等待 30 秒...`, '#ff9800');
                 } else {
                     sleepTime = Math.floor(Math.random() * 10001) + 5000;
                     log(`等待下一次点击: ${sleepTime / 1000}s...`, '#aaa');
