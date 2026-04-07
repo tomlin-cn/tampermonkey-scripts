@@ -234,22 +234,22 @@
     // ====== 5. 实时监控面板 (还原) ======
     setInterval(() => {
         const s = getStats();
-        const q = s.total - 99;
+        const q = s.total - 96;
         const countEl = document.getElementById('tk_count_status');
         const totalEl = document.getElementById('tk_total_status');
         const quotaEl = document.getElementById('tk_quota_status');
         if (countEl) countEl.innerText = `L: ${s.live} | R: ${s.rev}`;
         if (totalEl) totalEl.innerText = `总活跃 (Aktif+Review): ${s.total}`;
-        if (quotaEl) quotaEl.innerText = q > 0 ? `待处理名额: ${q}` : `无需下架 (保留99)`;
+        if (quotaEl) quotaEl.innerText = q > 0 ? `待处理名额: ${q}` : `无需下架 (保留96)`;
     }, 2000);
 
     // ====== 6. 批量下架主逻辑 (还原) ======
     document.getElementById('tk_start_btn').addEventListener('click', async () => {
         const stats = getStats();
         const limit = parseInt(document.getElementById('tk_view_threshold').value) || 0;
-        let maxDel = stats.total - 99;
+        let maxDel = stats.total - 96;
         if (maxDel <= 0) {
-            log(`当前活跃总数 ${stats.total} 未超过 99，无需操作`, 'orange');
+            log(`当前活跃总数 ${stats.total} 未超过 96，无需操作`, 'orange');
             return;
         }
         log(`🚀 任务启动 | 总量:${stats.total} | 目标下架:${maxDel}`, '#4caf50');
